@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Command Center Field Guide — Yuri Kruman</title>
+<style>
+:root{
+  --bg:#06121c; --bg-2:#0a1a26; --panel:#0e2130; --panel-2:#12283a;
+  --ink:#e7eef5; --muted:#9fb3c6; --dim:#5f7793;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --accent:#0ea5e9; --accent-2:#38bdf8; --green:#22c55e; --orange:#f97316;
+  --red:#ef4444; --purple:#a855f7; --yellow:#eab308;
+  --mono:'SFMono-Regular',Consolas,'JetBrains Mono','Courier New',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
+  --maxw:860px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+h1,h2,h3,h4{line-height:1.2;font-weight:800;letter-spacing:-.4px}
+h2{font-size:30px;margin:0 0 6px}
+h3{font-size:22px;margin:34px 0 10px;color:#fff}
+h4{font-size:17px;margin:22px 0 6px;color:var(--accent-2);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+p{margin:0 0 16px;color:var(--muted)}
+strong{color:var(--ink)}
+a{color:var(--accent-2);text-decoration:none}
+code{font-family:var(--mono);font-size:.86em;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;color:#cfe6f5}
+ul,ol{color:var(--muted);margin:0 0 16px;padding-left:22px}
+li{margin:0 0 7px}
+hr{border:none;border-top:1px solid var(--line);margin:46px 0}
+
+/* COVER */
+.cover{min-height:100vh;display:flex;flex-direction:column;justify-content:center;background:
+  radial-gradient(900px 500px at 80% -10%,rgba(14,165,233,.18),transparent 60%),
+  radial-gradient(700px 500px at 0% 110%,rgba(168,85,247,.14),transparent 55%),var(--bg)}
+.cover .wrap{width:100%}
+.kicker{font-family:var(--mono);font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:22px}
+.cover h1{font-size:60px;line-height:1.04;margin:0 0 18px;background:linear-gradient(120deg,#fff,#7fd3f5);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.cover .sub{font-size:21px;color:var(--muted);max-width:620px;margin-bottom:34px}
+.cover .by{font-size:15px;color:var(--dim);font-family:var(--mono)}
+.cover .pills{display:flex;gap:10px;flex-wrap:wrap;margin:30px 0 0}
+.pill{border:1px solid var(--line-2);border-radius:99px;padding:7px 15px;font-size:13px;color:var(--muted);background:rgba(255,255,255,.03)}
+
+/* SECTION HEADERS */
+.part{margin:70px 0 0;padding-top:30px;border-top:1px solid var(--line)}
+.part-num{font-family:var(--mono);font-size:13px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:8px}
+
+/* FIGURES */
+figure{margin:26px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg-2);box-shadow:0 14px 40px rgba(0,0,0,.4)}
+figure img{display:block;width:100%;height:auto}
+figcaption{font-size:13.5px;color:var(--dim);padding:11px 16px;border-top:1px solid var(--line);background:var(--panel);font-family:var(--mono)}
+.diagram{margin:26px 0;background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:24px}
+.diagram svg{display:block;width:100%;height:auto}
+.diagram .cap{font-size:13.5px;color:var(--dim);margin-top:14px;text-align:center;font-family:var(--mono)}
+
+/* CALLOUTS */
+.box{border:1px solid var(--line-2);border-left:3px solid var(--accent);border-radius:10px;padding:16px 18px;margin:22px 0;background:rgba(14,165,233,.05)}
+.box.warn{border-left-color:var(--orange);background:rgba(249,115,22,.06)}
+.box.win{border-left-color:var(--green);background:rgba(34,197,94,.06)}
+.box .t{font-weight:800;color:#fff;margin-bottom:6px;font-size:14px;text-transform:uppercase;letter-spacing:.5px}
+.box p:last-child{margin-bottom:0}
+
+/* CODE BLOCKS */
+pre{background:#04101a;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;margin:18px 0;font-family:var(--mono);font-size:13.5px;line-height:1.6;color:#cfe6f5}
+pre .c{color:#5f7793}
+pre .k{color:#7fd3f5}
+pre .s{color:#9be7a8}
+
+/* CHECKPOINT */
+.check{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px;margin:22px 0}
+.check .h{font-family:var(--mono);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);margin-bottom:8px}
+.lvl{display:grid;grid-template-columns:120px 1fr;gap:6px 14px;font-size:14px}
+.lvl b{color:var(--accent-2)}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+td{color:var(--muted)}
+td strong{color:var(--ink)}
+
+/* STEP CHIPS */
+.steps{counter-reset:s;list-style:none;padding:0;margin:18px 0}
+.steps li{counter-increment:s;position:relative;padding:0 0 14px 44px;margin:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:30px;height:30px;border-radius:8px;background:rgba(14,165,233,.15);color:var(--accent-2);font-weight:800;font-family:var(--mono);display:flex;align-items:center;justify-content:center;font-size:14px}
+
+/* TOC */
+.toc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin:30px 0}
+.toc h4{margin-top:0}
+.toc ol{columns:2;column-gap:36px}
+.toc a{color:var(--muted)}
+.toc a:hover{color:var(--accent-2)}
+
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,255,255,.06);color:var(--muted);margin-left:6px}
+.tag.low{color:var(--green);background:rgba(34,197,94,.12)}
+.tag.med{color:var(--orange);background:rgba(249,115,22,.12)}
+
+footer{margin:80px 0 40px;padding-top:24px;border-top:1px solid var(--line);font-family:var(--mono);font-size:13px;color:var(--dim);text-align:center}
+
+@media print{
+  body{background:#fff;color:#111;font-size:11pt}
+  .cover{min-height:auto;padding:40px 0}
+  .cover h1{-webkit-text-fill-color:#0b3a52;color:#0b3a52}
+  figure,pre,.diagram,.box,.check,.toc{break-inside:avoid}
+  a{color:#0b6}
+}
+@media(max-width:640px){.cover h1{font-size:40px}.toc ol{columns:1}.lvl{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ====================== COVER ====================== -->
+<section class="cover">
+  <div class="wrap">
+    <div class="kicker">The Build Protocol · Premium Field Guide</div>
+    <h1>The Command Center</h1>
+    <div class="sub">Build a self-updating business dashboard with an automated daily email brief. Open it offline in one click. Let it brief you every morning before you wake.</div>
+    <div class="by">A step-by-step build guide by Yuri Kruman</div>
+    <div class="pills">
+      <span class="pill">⚡ Offline dashboard</span>
+      <span class="pill">📨 Automated morning brief</span>
+      <span class="pill">🔄 Self-updating feeds</span>
+      <span class="pill">🧰 No-Code &amp; Full-Code tracks</span>
+      <span class="pill">🎓 Teachable in 4 sessions</span>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+
+  <!-- HERO SHOT -->
+  <figure>
+    <img src="assets/01-portfolio.png" alt="The Command Center dashboard, Portfolio view" />
+    <figcaption>The finished product: your whole business on one offline screen. This is what your students will build.</figcaption>
+  </figure>
+
+  <div class="toc">
+    <h4>What's inside</h4>
+    <ol>
+      <li><a href="#what">1. What you are building</a></li>
+      <li><a href="#arch">2. The architecture</a></li>
+      <li><a href="#setup">3. Project setup</a></li>
+      <li><a href="#m1">4. Module 1 — Your data</a></li>
+      <li><a href="#m2">5. Module 2 — The engine</a></li>
+      <li><a href="#m3">6. Module 3 — Helpers</a></li>
+      <li><a href="#m4">7. Module 4 — Feeds</a></li>
+      <li><a href="#m5">8. Module 5 — The dashboard</a></li>
+      <li><a href="#m6">9. Module 6 — The brief</a></li>
+      <li><a href="#m7">10. Module 7 — Email</a></li>
+      <li><a href="#m8">11. Module 8 — Schedule it</a></li>
+      <li><a href="#m9">12. Module 9 — The ritual</a></li>
+      <li><a href="#nocode">13. The No-Code track</a></li>
+      <li><a href="#teach">14. Teaching kit</a></li>
+      <li><a href="#appendix">15. Appendices</a></li>
+    </ol>
+  </div>
+
+  <!-- ====================== 1. WHAT ====================== -->
+  <section class="part" id="what">
+    <div class="part-num">Part 1</div>
+    <h2>What you are building</h2>
+    <p>A <strong>Command Center</strong>: a single place to run your business, plus an engine that keeps it current and reports to you every morning. It is plain files in one folder, which is exactly why it is portable, ownable and teachable.</p>
+    <p>It has three things you can see and touch:</p>
+    <ul>
+      <li><strong>A dashboard</strong> you open with one double-click. Works offline, opens instantly, shows your companies, pipeline, goals, tasks and live feeds. You edit it directly and it remembers your edits.</li>
+      <li><strong>An engine</strong> of small scripts that runs on a schedule: pulls fresh news, reads your notes, rebuilds the dashboard's data and emails you a brief.</li>
+      <li><strong>A morning brief</strong> in your inbox: top 3 actions today, what is due, where each part of the business stands, the headlines that matter and any risk flags.</li>
+    </ul>
+
+    <h4>Three tracks, one idea</h4>
+    <table>
+      <tr><th>Track</th><th>Who</th><th>Builds</th><th>Time</th></tr>
+      <tr><td><strong>No-Code</strong></td><td>Non-technical</td><td>The same system in a spreadsheet + a daily reminder</td><td>90 min</td></tr>
+      <tr><td><strong>Low-Code</strong></td><td>Can copy-paste</td><td>The dashboard + a script you run by hand</td><td>1 weekend</td></tr>
+      <tr><td><strong>Full-Code</strong></td><td>Builders</td><td>The complete app: data, feeds, brief, auto-email, scheduler</td><td>2 weekends</td></tr>
+    </table>
+    <p>This guide teaches the <strong>Full-Code</strong> build in full, then gives a complete <a href="#nocode">No-Code spreadsheet track</a> so a non-technical reader finishes with a working Command Center too.</p>
+
+    <div class="box win">
+      <div class="t">The promise</div>
+      <p>Build it once. Change <strong>one file</strong> to make it yours. From then on it runs while you sleep and the only daily habit is reading a two-minute email.</p>
+    </div>
+  </section>
+
+  <!-- ====================== 2. ARCHITECTURE ====================== -->
+  <section class="part" id="arch">
+    <div class="part-num">Part 2</div>
+    <h2>The architecture</h2>
+    <p>Every Command Center has the same five parts. Learn these names and you can teach the whole system.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 820 300" role="img" aria-label="Architecture diagram">
+        <defs>
+          <marker id="arr" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#38bdf8"/>
+          </marker>
+        </defs>
+        <!-- Source of truth -->
+        <rect x="20" y="120" width="150" height="62" rx="10" fill="#0e2130" stroke="#1e3445"/>
+        <text x="95" y="146" text-anchor="middle" fill="#e7eef5" font-size="14" font-weight="700">Source of Truth</text>
+        <text x="95" y="165" text-anchor="middle" fill="#5f7793" font-size="11" font-family="monospace">scripts/data.mjs</text>
+        <!-- Engine -->
+        <rect x="250" y="40" width="170" height="62" rx="10" fill="#12283a" stroke="#0ea5e9"/>
+        <text x="335" y="66" text-anchor="middle" fill="#e7eef5" font-size="14" font-weight="700">Engine</text>
+        <text x="335" y="85" text-anchor="middle" fill="#5f7793" font-size="10.5" font-family="monospace">build-data · daily-brief</text>
+        <!-- Intelligence -->
+        <rect x="250" y="200" width="170" height="62" rx="10" fill="#0e2130" stroke="#1e3445"/>
+        <text x="335" y="226" text-anchor="middle" fill="#e7eef5" font-size="14" font-weight="700">Intelligence Layer</text>
+        <text x="335" y="245" text-anchor="middle" fill="#5f7793" font-size="10.5" font-family="monospace">feeds · digest</text>
+        <!-- Snapshot -->
+        <rect x="500" y="120" width="140" height="62" rx="10" fill="#0e2130" stroke="#1e3445"/>
+        <text x="570" y="146" text-anchor="middle" fill="#e7eef5" font-size="14" font-weight="700">Snapshot</text>
+        <text x="570" y="165" text-anchor="middle" fill="#5f7793" font-size="11" font-family="monospace">data.js</text>
+        <!-- Surface -->
+        <rect x="670" y="40" width="130" height="62" rx="10" fill="#12283a" stroke="#22c55e"/>
+        <text x="735" y="66" text-anchor="middle" fill="#e7eef5" font-size="14" font-weight="700">Surface</text>
+        <text x="735" y="85" text-anchor="middle" fill="#5f7793" font-size="10.5" font-family="monospace">index.html</text>
+        <!-- Delivery -->
+        <rect x="670" y="200" width="130" height="62" rx="10" fill="#12283a" stroke="#a855f7"/>
+        <text x="735" y="226" text-anchor="middle" fill="#e7eef5" font-size="14" font-weight="700">Delivery</text>
+        <text x="735" y="245" text-anchor="middle" fill="#5f7793" font-size="10.5" font-family="monospace">email brief</text>
+        <!-- arrows -->
+        <path d="M170,140 L246,80" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+        <path d="M335,200 L335,106" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+        <path d="M420,75 L560,118" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+        <path d="M640,140 L666,80" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+        <path d="M420,80 C620,120 600,200 666,225" stroke="#a855f7" stroke-width="2" fill="none" marker-end="url(#arr)" opacity=".8"/>
+      </svg>
+      <div class="cap">The five parts. You edit the Source of Truth. The Engine pulls Intelligence, writes the Snapshot and sends the brief. The dashboard just reads the Snapshot.</div>
+    </div>
+
+    <h4>The data flow, in one line</h4>
+    <pre><span class="c">SOURCE OF TRUTH ──► ENGINE ──► data.js ──► index.html</span>
+ scripts/data.mjs   (gather +   (snapshot)   (dashboard)
+                     compose)
+                        │
+                        └──► EMAIL BRIEF (your inbox)</pre>
+
+    <div class="box">
+      <div class="t">The one rule that makes it reliable</div>
+      <p><strong>Offline-first, push-second.</strong> The thing you open must never depend on a server running. The dashboard is a static file that opens with a double-click and works with the internet off. The engine is separate and only needs to run once a day. If the engine fails one morning, yesterday's dashboard still opens. Reliability is the first feature.</p>
+    </div>
+  </section>
+
+  <!-- ====================== 3. SETUP ====================== -->
+  <section class="part" id="setup">
+    <div class="part-num">Part 3</div>
+    <h2>Project setup</h2>
+    <p>Prerequisites: <strong>Node.js 20+</strong>, a code editor, a terminal, and (for email) a Gmail account where you can make an app password. You need to <em>read</em> code, not write much.</p>
+
+    <ol class="steps">
+      <li>Create the folder and initialize:
+        <pre>mkdir command-center
+cd command-center
+npm init -y
+mkdir scripts ; mkdir setup</pre></li>
+      <li>Set the commands in <code>package.json</code> (the five things you will run):
+        <pre>"scripts": {
+  <span class="k">"refresh"</span>:      <span class="s">"node scripts/build-data.mjs"</span>,
+  <span class="k">"brief"</span>:        <span class="s">"node scripts/daily-brief.mjs"</span>,
+  <span class="k">"brief:dry"</span>:    <span class="s">"node scripts/daily-brief.mjs --no-email"</span>,
+  <span class="k">"verify-email"</span>: <span class="s">"node scripts/daily-brief.mjs --verify"</span>,
+  <span class="k">"open"</span>:         <span class="s">"start index.html"</span>
+}</pre></li>
+      <li>Install the one dependency: <code>npm install nodemailer</code></li>
+    </ol>
+
+    <div class="diagram">
+      <svg viewBox="0 0 820 150" role="img" aria-label="Folder structure">
+        <rect x="10" y="10" width="800" height="130" rx="10" fill="#04101a" stroke="#1e3445"/>
+        <text x="30" y="38" fill="#e7eef5" font-size="13.5" font-family="monospace">command-center/</text>
+        <text x="50" y="58" fill="#9be7a8" font-size="13" font-family="monospace">├─ index.html        <tspan fill="#5f7793">the dashboard you double-click</tspan></text>
+        <text x="50" y="76" fill="#9be7a8" font-size="13" font-family="monospace">├─ data.js           <tspan fill="#5f7793">generated snapshot (auto)</tspan></text>
+        <text x="50" y="94" fill="#cfe6f5" font-size="13" font-family="monospace">├─ scripts/          <tspan fill="#5f7793">data.mjs · feeds · digest · build-data · brief · email · daily-brief</tspan></text>
+        <text x="50" y="112" fill="#cfe6f5" font-size="13" font-family="monospace">├─ setup/            <tspan fill="#5f7793">install-scheduler.ps1</tspan></text>
+        <text x="50" y="130" fill="#f0a36a" font-size="13" font-family="monospace">└─ .env              <tspan fill="#5f7793">your email credentials (never shared)</tspan></text>
+      </svg>
+      <div class="cap">Every file you build maps to one box in the architecture diagram.</div>
+    </div>
+  </section>
+
+  <!-- ====================== MODULE 1 ====================== -->
+  <section class="part" id="m1">
+    <div class="part-num">Module 1</div>
+    <h2>Your data <span class="tag">scripts/data.mjs</span></h2>
+    <p><strong>This is the only file you edit day to day.</strong> It holds your companies or projects, pipeline, goals, tasks and the list of feeds you follow. Everything else reads from it. To rebuild this app for any business, you change this one file.</p>
+
+    <h4>The shape (replace with your business)</h4>
+    <pre><span class="c">// scripts/data.mjs</span>
+<span class="k">export const</span> COMPANIES = [{
+  id: <span class="s">'acme'</span>,            <span class="c">// short, lowercase, never changes</span>
+  name: <span class="s">'Acme Consulting'</span>, emoji: <span class="s">'🎯'</span>, color: <span class="s">'#0ea5e9'</span>,
+  health: 60,             <span class="c">// 0-100, your honest gut score</span>
+  revenueLabel: <span class="s">'MRR'</span>, revenueCurrent: 0, revenueTarget: 12500,
+  pipelineValue: 84000, focusAction: <span class="s">'Send the proposal you keep dodging'</span>,
+  kpis: [{ label: <span class="s">'Pipeline'</span>, value: <span class="s">'$84K'</span> }], notes: <span class="s">''</span>,
+}]
+<span class="k">export const</span> PIPELINE_DEALS_DEFAULT = [{
+  id: <span class="s">'d1'</span>, company: <span class="s">'acme'</span>, name: <span class="s">'Series B pilot'</span>, value: 84000,
+  stage: <span class="s">'qualified'</span>, nextAction: <span class="s">'Book discovery call'</span>, dueDate: <span class="s">'2026-06-15'</span> }]
+<span class="k">export const</span> TASKS_DEFAULT = [{
+  id: <span class="s">'t1'</span>, priority: <span class="s">'critical'</span>, company: <span class="s">'acme'</span>,
+  title: <span class="s">'Send the proposal'</span>, category: <span class="s">'Sales'</span>, done: false, dueISO: <span class="s">'2026-06-09'</span> }]
+<span class="c">// ...OKRS_DEFAULT, STAGES, FEED_SOURCES, BUILD_STATUS (see Appendix C)</span></pre>
+
+    <div class="box win">
+      <div class="t">Honesty is the feature</div>
+      <p>Use real numbers. Put <code>0</code> where something is unpaid or unstarted, never an aspirational figure. A dashboard you trust is one you keep using. A dashboard that flatters you is one you quietly stop opening.</p>
+    </div>
+
+    <div class="check">
+      <div class="h">✓ Checkpoint M1</div>
+      <div class="lvl">
+        <span><b>Functional</b></span><span>data.mjs holds 5-9 companies/projects with no errors.</span>
+        <span><b>Aligned</b></span><span>Every number is one you would bet on.</span>
+        <span><b>Leveraged</b></span><span>You cut at least one vanity metric.</span>
+      </div>
+    </div>
+    <div class="box warn"><div class="t">Common failure</div><p>Changing an <code>id</code> later and breaking the deals and tasks that reference it. Rename the display <code>name</code> freely, but leave <code>id</code> alone.</p></div>
+  </section>
+
+  <!-- ====================== MODULE 2 ====================== -->
+  <section class="part" id="m2">
+    <div class="part-num">Module 2</div>
+    <h2>The engine that writes the snapshot <span class="tag">build-data.mjs</span></h2>
+    <p>This imports your data, fetches the feeds, reads your notes digest, and writes one file: <code>data.js</code>, which sets <code>window.__CC__</code> to the whole snapshot. The dashboard reads that.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 820 120" role="img" aria-label="Morning run timeline">
+        <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#9fb3c6"/></marker></defs>
+        <line x1="40" y1="60" x2="780" y2="60" stroke="#1e3445" stroke-width="2"/>
+        <g font-family="monospace" font-size="11" fill="#9fb3c6" text-anchor="middle">
+          <circle cx="70" cy="60" r="6" fill="#0ea5e9"/><text x="70" y="90">7:00 AM</text><text x="70" y="40" fill="#5f7793">trigger</text>
+          <circle cx="230" cy="60" r="6" fill="#12283a" stroke="#0ea5e9"/><text x="230" y="90">fetch feeds</text>
+          <circle cx="380" cy="60" r="6" fill="#12283a" stroke="#0ea5e9"/><text x="380" y="90">read digest</text>
+          <circle cx="530" cy="60" r="6" fill="#12283a" stroke="#0ea5e9"/><text x="530" y="90">write data.js</text>
+          <circle cx="680" cy="60" r="6" fill="#a855f7"/><text x="680" y="90">email brief</text>
+        </g>
+        <line x1="80" y1="60" x2="222" y2="60" stroke="#9fb3c6" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="240" y1="60" x2="372" y2="60" stroke="#9fb3c6" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="390" y1="60" x2="522" y2="60" stroke="#9fb3c6" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="540" y1="60" x2="672" y2="60" stroke="#9fb3c6" stroke-width="1.5" marker-end="url(#a2)"/>
+      </svg>
+      <div class="cap">The morning run, start to finish, in under a minute, with no one watching.</div>
+    </div>
+
+    <pre><span class="c">// scripts/build-data.mjs (essence)</span>
+<span class="k">export async function</span> buildData({ fetchFeeds = true } = {}) {
+  <span class="k">const</span> feeds  = fetchFeeds ? <span class="k">await</span> fetchAllFeeds(FEED_SOURCES) : {}
+  <span class="k">const</span> digest = readLatestDigest()
+  <span class="k">const</span> snapshot = { generatedAt: <span class="k">new</span> Date().toISOString(),
+    companies: COMPANIES, deals: PIPELINE_DEALS_DEFAULT, okrs: OKRS_DEFAULT,
+    tasks: TASKS_DEFAULT, stages: STAGES, feedSources: FEED_SOURCES, feeds, digest }
+  fs.writeFileSync(<span class="s">'data.js'</span>, <span class="s">'window.__CC__ = '</span> + JSON.stringify(snapshot) + <span class="s">';'</span>)
+}</pre>
+    <div class="box warn"><div class="t">Common failure</div><p>Editing <code>data.js</code> by hand. Never do that, it is regenerated every morning. Edit <code>data.mjs</code>.</p></div>
+  </section>
+
+  <!-- ====================== MODULE 3 ====================== -->
+  <section class="part" id="m3">
+    <div class="part-num">Module 3</div>
+    <h2>The helpers <span class="tag">env.mjs · digest.mjs</span></h2>
+    <p>Two tiny files. <code>env.mjs</code> loads your <code>.env</code> credentials and locates the project root. <code>digest.mjs</code> reads the newest Markdown file from a notes folder you point it at (and returns <code>null</code> safely if you do not keep one, so everything still works).</p>
+    <pre><span class="c">// digest.mjs — newest note from your folder, or null</span>
+<span class="k">export function</span> readLatestDigest() {
+  <span class="k">if</span> (!fs.existsSync(DIGEST_DIR)) <span class="k">return</span> null
+  <span class="k">const</span> files = fs.readdirSync(DIGEST_DIR).filter(f => f.endsWith(<span class="s">'.md'</span>)).sort().reverse()
+  <span class="k">return</span> files.length ? { content: fs.readFileSync(...), date: files[0] } : null
+}</pre>
+  </section>
+
+  <!-- ====================== MODULE 4 ====================== -->
+  <section class="part" id="m4">
+    <div class="part-num">Module 4</div>
+    <h2>The intelligence layer <span class="tag">feeds.mjs</span></h2>
+    <p>Fetches and parses your news feeds <em>server-side</em>, where there are no browser restrictions. The cleanest source is a Google News RSS search: take <code>https://news.google.com/rss/search?q=</code> and add your terms joined by <code>+</code>.</p>
+    <p>The Feeds tab then shows everything the last morning run pulled, refreshed daily:</p>
+    <figure>
+      <img src="assets/05-feeds.png" alt="The Feeds view with live headlines and KB digest" />
+      <figcaption>Live feeds (left) and your notes digest (right), baked in by the morning engine. The dashboard never fetches anything itself.</figcaption>
+    </figure>
+    <div class="box"><div class="t">The filter that keeps it useful</div><p>For each candidate feed ask: in the last month, how many items would have changed a decision I made? If the answer is zero, it is noise wearing the costume of news. Keep 3 to 5 sources, no more.</p></div>
+    <div class="check">
+      <div class="h">✓ Checkpoint M4</div>
+      <div class="lvl">
+        <span><b>Functional</b></span><span><code>npm run refresh</code> prints feed counts above 0.</span>
+        <span><b>Aligned</b></span><span>Every feed ties to a decision you actually make.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== MODULE 5 ====================== -->
+  <section class="part" id="m5">
+    <div class="part-num">Module 5</div>
+    <h2>The dashboard <span class="tag">index.html</span></h2>
+    <p>A single self-contained HTML file: all styles and JavaScript inline, no dependencies, no CDN. It reads <code>window.__CC__</code> and renders six tabs. This is what opens by double-click and works offline.</p>
+
+    <h4>The pipeline, as a kanban you edit</h4>
+    <figure>
+      <img src="assets/02-pipeline.png" alt="The Pipeline kanban view" />
+      <figcaption>Deals move across stages. Click any card to edit, or use “+ Add Deal”.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/07-deal-modal.png" alt="The add/edit deal modal" />
+      <figcaption>Add and edit deals in a modal. Your edits save to the browser, so the morning refresh never erases them.</figcaption>
+    </figure>
+
+    <h4>Goals, tasks and systems</h4>
+    <figure>
+      <img src="assets/03-okrs.png" alt="The OKR view" />
+      <figcaption>Goals with editable progress bars. Type a new number, it saves instantly.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/04-tasks.png" alt="The Tasks view" />
+      <figcaption>Tasks ranked by priority, filterable, with inline add. The critical count shows on the tab.</figcaption>
+    </figure>
+
+    <div class="box">
+      <div class="t">The pattern worth teaching</div>
+      <p><strong>Read-only source, editable overlay.</strong> <code>data.js</code> is regenerated every morning, so the dashboard never stores your edits there. Your changes (a task checked, a note typed, a deal edited) live in the browser's <code>localStorage</code> and are merged on top at render time. That is why the morning refresh updates the news without ever erasing your work.</p>
+    </div>
+
+    <div class="check">
+      <div class="h">✓ Checkpoint M5</div>
+      <div class="lvl">
+        <span><b>Functional</b></span><span>Double-clicking <code>index.html</code> opens it offline.</span>
+        <span><b>Aligned</b></span><span>It shows your real business across all six tabs.</span>
+        <span><b>Leveraged</b></span><span>A five-second glance tells you where today's attention goes.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== MODULE 6 ====================== -->
+  <section class="part" id="m6">
+    <div class="part-num">Module 6</div>
+    <h2>The brief <span class="tag">brief.mjs</span></h2>
+    <p>Turns the snapshot into a ranked morning email. Ordered top to bottom by usefulness so the brief decides what to read first, and you never have to.</p>
+    <ol>
+      <li>Greeting, date, an urgency line (how many overdue, how many due today).</li>
+      <li><strong>Top 3 actions today</strong>, ranked, only things you can act on.</li>
+      <li><strong>Due this week</strong>: pipeline and tasks with the nearest dates.</li>
+      <li><strong>Where each part stands</strong>: one line per company, lowest health first.</li>
+      <li><strong>Market signal</strong>: 2 to 3 headlines from your feeds.</li>
+      <li><strong>Risk flags</strong>: anything stale or overdue.</li>
+    </ol>
+    <pre><span class="c">// the ranking logic, the part worth teaching</span>
+<span class="k">const</span> rank = { critical:0, high:1, medium:2, low:3 }
+<span class="k">const</span> open = tasks.filter(t => !t.done)
+  .sort((a,b) => rank[a.priority]-rank[b.priority] || a.dueISO.localeCompare(b.dueISO))
+<span class="k">const</span> top3 = open.filter(t => t.priority===<span class="s">'critical'</span>||t.priority===<span class="s">'high'</span>).slice(0,3)</pre>
+    <div class="box warn"><div class="t">Cap it at three</div><p>A brief that lists fifteen "priorities" teaches you to dread it. Three real moves, ranked. The rest is reference, not obligation.</p></div>
+  </section>
+
+  <!-- ====================== MODULE 7 ====================== -->
+  <section class="part" id="m7">
+    <div class="part-num">Module 7</div>
+    <h2>Email + the orchestrator <span class="tag">email.mjs · daily-brief.mjs</span></h2>
+    <p><code>email.mjs</code> sends through Gmail with <code>nodemailer</code>. <code>daily-brief.mjs</code> wires the whole morning run into one command: refresh data, compose, send.</p>
+    <ol class="steps">
+      <li>Turn on <strong>2-Step Verification</strong> on your Google account.</li>
+      <li>Create an <strong>App Password</strong> at <code>myaccount.google.com/apppasswords</code> (16 characters).</li>
+      <li>Put it in <code>.env</code> and add <code>.env</code> to <code>.gitignore</code>:
+        <pre>GMAIL_USER=you@gmail.com
+GMAIL_APP_PASSWORD=xxxxxxxxxxxxxxxx
+BRIEF_TO=you@gmail.com</pre></li>
+      <li>Test: <code>npm run verify-email</code> → <code>npm run brief:dry</code> → <code>npm run brief</code></li>
+    </ol>
+    <div class="box warn"><div class="t">Security rule to teach</div><p>Never use your normal login password, only an app password. Never commit <code>.env</code>. This is the one credential the builder must create themselves.</p></div>
+  </section>
+
+  <!-- ====================== MODULE 8 ====================== -->
+  <section class="part" id="m8">
+    <div class="part-num">Module 8</div>
+    <h2>Schedule it <span class="tag">install-scheduler.ps1</span></h2>
+    <p>Register a task that runs <code>node scripts/daily-brief.mjs</code> at the time you choose. On Windows, Task Scheduler. On Mac or Linux, <code>cron</code>.</p>
+    <pre><span class="c"># the trigger: which days, what time</span>
+$Trigger = New-ScheduledTaskTrigger -Weekly `
+  -DaysOfWeek Sunday,Monday,Tuesday,Wednesday,Thursday,Friday -At 7:00AM</pre>
+    <p>Drop a day from <code>-DaysOfWeek</code> to skip it. Change <code>-At</code> for the time. Install, then test instantly:</p>
+    <pre>powershell -ExecutionPolicy Bypass -File setup\install-scheduler.ps1
+Start-ScheduledTask -TaskName CommandCenter-MorningBrief</pre>
+    <div class="box"><div class="t">Mac / Linux</div><p><code>crontab -e</code> then <code>0 7 * * 0-5 cd /path/to/command-center &amp;&amp; node scripts/daily-brief.mjs</code>. Same script, different scheduler.</p></div>
+  </section>
+
+  <!-- ====================== MODULE 9 ====================== -->
+  <section class="part" id="m9">
+    <div class="part-num">Module 9</div>
+    <h2>The daily ritual</h2>
+    <p>Nothing to build. This is how you operate it, and the habit that makes it pay off.</p>
+    <ol class="steps">
+      <li>Read the brief on your phone.</li>
+      <li>Commit to the top 3 actions.</li>
+      <li>Open the dashboard only if a number needs your judgment.</li>
+      <li>Close it, do action one, do not browse.</li>
+    </ol>
+    <p><strong>Upkeep:</strong> weekly, update health scores and goals, retire one weak feed and add one. When the business changes, edit <code>data.mjs</code> and run <code>npm run refresh</code>. Back up your edits with the dashboard's export button now and then.</p>
+  </section>
+
+  <!-- ====================== NO-CODE ====================== -->
+  <section class="part" id="nocode">
+    <div class="part-num">Part 4</div>
+    <h2>The No-Code track (spreadsheet)</h2>
+    <p>Not everyone will run Node. The same system works in a spreadsheet, and a non-technical reader can finish in about 90 minutes. The companion file <strong><code>Command-Center-NoCode-Template.xlsx</code></strong> ships with this guide, prebuilt with every tab and the summary dashboard below.</p>
+
+    <h4>The five tabs (the same five parts)</h4>
+    <table>
+      <tr><th>Tab</th><th>What goes in it</th><th>Maps to</th></tr>
+      <tr><td><strong>Companies</strong></td><td>One row per company/project: name, health (0-100), revenue now, target, focus action</td><td>Source of Truth</td></tr>
+      <tr><td><strong>Pipeline</strong></td><td>One row per deal: company, name, value, stage, next action, due date</td><td>Source of Truth</td></tr>
+      <tr><td><strong>Goals</strong></td><td>One row per key result: company, label, current, target</td><td>Source of Truth</td></tr>
+      <tr><td><strong>Tasks</strong></td><td>One row per task: priority, company, title, due date, done</td><td>Source of Truth</td></tr>
+      <tr><td><strong>Feeds</strong></td><td>The 3-5 sources you follow, with the decision each informs</td><td>Intelligence Layer</td></tr>
+      <tr><td><strong>Dashboard</strong></td><td>An auto-summary tab: totals, health colors, today's top tasks</td><td>Surface</td></tr>
+    </table>
+
+    <h4>The three moves that make a spreadsheet feel like the app</h4>
+    <ol class="steps">
+      <li><strong>Health colors.</strong> Conditional formatting on the health column: red below 50, amber 50-69, green 70+. Now one glance reads the whole portfolio, exactly like the rings in the app.</li>
+      <li><strong>A summary tab.</strong> Use <code>SUMIF</code> to total pipeline by company and <code>COUNTIF</code> to count open critical tasks. That tab is your dashboard. Pin it as a browser tab.</li>
+      <li><strong>The daily reminder = your engine.</strong> A No-Code reader replaces the scheduler with a recurring calendar event at 7:00 AM titled "Open Command Center, commit to 3." For the feed and brief, a free tool like a Google Alert or a no-code automation (Zapier, Make) can email you a digest. The discipline is the system, the brand of tool does not matter.</li>
+    </ol>
+
+    <div class="box win"><div class="t">Graduation path</div><p>The spreadsheet is not a lesser version, it is the on-ramp. When a reader outgrows it (wants the auto-email, the live feeds, the offline app) the columns map one-to-one onto <code>data.mjs</code>. Nothing is wasted. They graduate from No-Code to Full-Code by copying their rows into the data file.</p></div>
+  </section>
+
+  <!-- ====================== TEACH ====================== -->
+  <section class="part" id="teach">
+    <div class="part-num">Part 5</div>
+    <h2>Teaching kit</h2>
+
+    <h4>A 4-session syllabus</h4>
+    <table>
+      <tr><th>Session</th><th>Covers</th><th>They leave with</th></tr>
+      <tr><td><strong>1</strong></td><td>Parts 1-3 + Module 1</td><td>Their <code>data.mjs</code> (or spreadsheet) with their real business</td></tr>
+      <tr><td><strong>2</strong></td><td>Modules 2-5</td><td>A working offline dashboard showing their data and live feeds</td></tr>
+      <tr><td><strong>3</strong></td><td>Modules 6-7</td><td>A brief emailed to themselves</td></tr>
+      <tr><td><strong>4</strong></td><td>Modules 8-9</td><td>An automated daily brief + a 7-day ritual plan</td></tr>
+    </table>
+
+    <h4>Run every session the same way</h4>
+    <ol class="steps">
+      <li>Show the finished piece (the worked example).</li>
+      <li>Build one of yours live in front of them.</li>
+      <li>They build their own in the room.</li>
+      <li>Check against the module's Checkpoint rubric.</li>
+      <li>Assign the next module.</li>
+    </ol>
+
+    <h4>The grading rubric (every module)</h4>
+    <table>
+      <tr><th>Level</th><th>Evidence</th></tr>
+      <tr><td><strong>Functional</strong></td><td>It runs</td></tr>
+      <tr><td><strong>Aligned</strong></td><td>It holds their real business data</td></tr>
+      <tr><td><strong>Leveraged</strong></td><td>They would miss it if it broke</td></tr>
+      <tr><td><strong>Transferable</strong></td><td>They can teach it to someone else</td></tr>
+    </table>
+
+    <h4>Packaging tiers</h4>
+    <table>
+      <tr><th>Tier</th><th>Offer</th></tr>
+      <tr><td><strong>Free / regular reader</strong></td><td>Parts 1-3 + Module 1, the No-Code spreadsheet</td></tr>
+      <tr><td><strong>Premium reader</strong></td><td>This full field guide + the reference files</td></tr>
+      <tr><td><strong>Student / cohort</strong></td><td>The 4-session course with feedback</td></tr>
+      <tr><td><strong>1-on-1</strong></td><td>You build their Command Center with them, around their business</td></tr>
+    </table>
+  </section>
+
+  <!-- ====================== APPENDIX ====================== -->
+  <section class="part" id="appendix">
+    <div class="part-num">Part 6</div>
+    <h2>Appendices</h2>
+
+    <h4>A. Command cheat sheet</h4>
+    <pre>npm run refresh        <span class="c">Rebuild data.js (feeds + digest). No email.</span>
+npm run brief          <span class="c">Full run: refresh + email the brief.</span>
+npm run brief:dry      <span class="c">Full run, print the brief, send nothing.</span>
+npm run verify-email   <span class="c">Check email credentials.</span>
+npm run open           <span class="c">Open the dashboard.</span></pre>
+
+    <h4>B. The data schema</h4>
+    <pre>COMPANY: { id, name, emoji, color, health(0-100), revenueLabel,
+           revenueCurrent, revenueTarget, pipelineValue, focusAction, kpis[], notes }
+DEAL:    { id, company, name, value, stage, nextAction, dueDate(YYYY-MM-DD) }
+OKR:     { company, objective, krs:[{ label, current, target, format? }] }
+TASK:    { id, priority(critical|high|medium|low), company, title,
+           category, done, dueISO(YYYY-MM-DD) }
+STAGE:   { key, label, color }
+FEED:    { id, label, color, url, description }</pre>
+
+    <h4>C. Troubleshooting</h4>
+    <table>
+      <tr><th>Symptom</th><th>Fix</th></tr>
+      <tr><td>Dashboard says "run npm run refresh"</td><td><code>data.js</code> does not exist yet. Run it.</td></tr>
+      <tr><td>Feeds show 0 or an error</td><td>URL blocked or wrong. Use a Google News RSS search URL; encode spaces as <code>+</code>.</td></tr>
+      <tr><td>verify-email auth error</td><td>You used your login password. Create an app password.</td></tr>
+      <tr><td>Edits disappeared after refresh</td><td>You edited <code>data.js</code> by hand. Edit <code>data.mjs</code> instead.</td></tr>
+    </table>
+
+    <h4>D. Adapt-it worksheet</h4>
+    <pre>1. My "companies" are really: ____ (service lines / clients / products)
+2. My pipeline stages are:      ____
+3. My 3-5 feeds (+ the decision each informs): ____
+4. My rest day (no email):      ____
+5. The time I want the brief:   ____
+6. The one number that says each area is healthy: ____</pre>
+
+    <h4>E. Regenerate these screenshots</h4>
+    <p>The screenshots in this guide were captured from the live app with <code>node setup/screenshots.mjs</code>. Re-run it any time the dashboard changes to refresh every figure automatically.</p>
+  </section>
+
+  <footer>
+    The Command Center Field Guide · Protocol and reference implementation by Yuri Kruman<br/>
+    Build it by changing one file: <code>scripts/data.mjs</code>
+  </footer>
+
+</div>
+</body>
+</html>
