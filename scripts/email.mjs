@@ -7,6 +7,11 @@
 // ============================================================
 
 import nodemailer from 'nodemailer'
+import dns from 'node:dns'
+
+// Some machines/networks have no working IPv6 route to Gmail, and Node
+// tries IPv6 first by default, which hangs until timeout. Force IPv4.
+try { dns.setDefaultResultOrder('ipv4first') } catch (_) {}
 
 export function hasEmailConfig() {
   return Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD)
@@ -14,15 +19,23 @@ export function hasEmailConfig() {
 
 export function makeTransport() {
   const user = process.env.GMAIL_USER
-  const pass = process.env.GMAIL_APP_PASSWORD
+  // Google shows app passwords spaced ("abcd efgh ijkl mnop") for
+  // readability, but SMTP wants the 16 chars with NO spaces. Strip them.
+  const pass = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '')
   if (!user || !pass) {
     throw new Error(
       'Missing GMAIL_USER / GMAIL_APP_PASSWORD in .env — copy .env.example to .env and fill them in.'
     )
   }
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: { user, pass },
+    family: 4,               // force IPv4 (the IPv6 route to Gmail can time out)
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 20000,
   })
 }
 
