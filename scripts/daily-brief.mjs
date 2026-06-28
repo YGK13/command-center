@@ -20,6 +20,7 @@ import { ROOT } from './env.mjs'
 import { buildData } from './build-data.mjs'
 import { composeBrief } from './brief.mjs'
 import { sendBrief, verifyEmail, hasEmailConfig } from './email.mjs'
+import { loadUserOverlay, applyOverlay } from './userdata.mjs'
 
 const args = new Set(process.argv.slice(2))
 const noEmail = args.has('--no-email')
@@ -49,9 +50,17 @@ async function main() {
   log('Data written → data.js   Feeds:', feedSummary || '(none)')
   log('KB digest:', snapshot.digest ? snapshot.digest.filename : '(none found)')
 
+  // 1b. Apply your latest dashboard edits (newest command-center-*.json
+  //     export in Downloads), so the brief reflects your real work.
+  const overlay = loadUserOverlay()
+  const briefSnapshot = applyOverlay(snapshot, overlay)
+  log(overlay
+    ? `Applied your edits from ${overlay._sourceFile}`
+    : 'No dashboard export found — using defaults (edit the dashboard + click Export to personalize).')
+
   // 2. Compose the brief
   const dashboardPath = path.join(ROOT, 'index.html')
-  const brief = composeBrief(snapshot, { now: new Date(), dashboardPath })
+  const brief = composeBrief(briefSnapshot, { now: new Date(), dashboardPath })
 
   if (brief.skip) {
     log('Rest day - brief suppressed (' + brief.reason + '). Data still refreshed.')
