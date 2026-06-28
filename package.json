@@ -10,6 +10,7 @@
     "brief": "node scripts/daily-brief.mjs",
     "brief:dry": "node scripts/daily-brief.mjs --no-email",
     "verify-email": "node scripts/daily-brief.mjs --verify",
+    "app": "node scripts/serve.mjs",
     "open": "node -e \"const o=process.platform==='win32'?'start':process.platform==='darwin'?'open':'xdg-open';require('child_process').exec(o+' index.html')\"",
     "shots": "node setup/screenshots.mjs",
     "nocode-template": "python setup/make-nocode-template.py"

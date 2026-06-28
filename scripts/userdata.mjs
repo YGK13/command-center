@@ -1,27 +1,40 @@
 // ============================================================
 // USERDATA — bridges your dashboard edits into the morning email.
 //
-// The dashboard's Export button (the down-arrow in the top bar) saves
-// your edits as a file named command-center-YYYY-MM-DD.json in your
+// The dashboard saves your edits with its Export button (the ↓ in the
+// top bar) as a file named command-center-YYYY-MM-DD.json in your
 // Downloads folder. This module finds the NEWEST such file and applies
 // your edits (checked-off + added tasks, edited deals, health scores)
 // on top of the defaults, so the morning brief reflects your real work.
 //
 // No server, no cloud. Your habit: edit in the dashboard, click Export,
-// and the next brief is current. Override the folder with USER_DATA_DIR.
+// and tonight's email is current. Override the folder with USER_DATA_DIR.
 // ============================================================
 
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
+import { ROOT } from './env.mjs'
 
 const USER_DIR = process.env.USER_DATA_DIR || path.join(os.homedir(), 'Downloads')
+const LOCAL = path.join(ROOT, 'data.local.json')
 
 /**
- * Find and parse the newest command-center-*.json export.
- * Returns the overlay object or null.
+ * Load your saved edits. Prefers data.local.json (written automatically
+ * by the desktop app) and falls back to the newest command-center-*.json
+ * export in Downloads (the manual Export-button path). Returns null if
+ * neither exists.
  */
 export function loadUserOverlay() {
+  // 1. Desktop app's auto-saved state (no Export needed).
+  try {
+    if (fs.existsSync(LOCAL)) {
+      const data = JSON.parse(fs.readFileSync(LOCAL, 'utf8'))
+      return { ...data, _sourceFile: 'data.local.json' }
+    }
+  } catch {}
+
+  // 2. Fallback: newest manual Export in Downloads.
   try {
     if (!fs.existsSync(USER_DIR)) return null
     const files = fs
@@ -53,8 +66,8 @@ function mergeTasks(defaults, savedTaskState) {
 
 /**
  * Return a NEW snapshot with the user's overlay applied. Only the fields
- * the email uses are merged (tasks, deals, company health/notes). The
- * original snapshot is untouched, so data.js (the dashboard) is unaffected.
+ * the email uses are merged (tasks, deals, company health). The original
+ * snapshot is left untouched, so data.js (the dashboard) is unaffected.
  */
 export function applyOverlay(snapshot, overlay) {
   if (!overlay) return snapshot

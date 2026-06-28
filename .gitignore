@@ -7,6 +7,9 @@ node_modules/
 # Generated dashboard data snapshot (rebuilt by `npm run refresh`)
 data.js
 
+# Your live edits, auto-saved by the desktop app. Private, never commit.
+data.local.json
+
 # Your own notes folder (optional digest source)
 notes/
 

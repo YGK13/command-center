@@ -283,10 +283,29 @@ var CC = window.__CC__ || null
 var hasData = !!CC
 
 // ---- Storage (localStorage overlays) -------------------------
+// When opened as the desktop app (served over http://localhost), edits
+// also auto-save to disk via the server, so the morning email reads them
+// with no Export step. When opened as a plain file (file://), it falls
+// back to localStorage + the manual Export button — both still work.
 var V='v5'
+var SERVED = (location.protocol === 'http:' || location.protocol === 'https:')
+var OVERLAY_KEYS = {tasks:1, deals:1, okr:1, health:1, notes:1}
 function key(n){return 'cc_'+n+'_'+V}
-function save(n,val){try{localStorage.setItem(key(n),JSON.stringify(val))}catch(e){}}
+function save(n,val){
+  try{localStorage.setItem(key(n),JSON.stringify(val))}catch(e){}
+  if(SERVED && OVERLAY_KEYS[n]) scheduleSync()
+}
 function load(n,fb){try{var r=localStorage.getItem(key(n));return r!==null?JSON.parse(r):fb}catch(e){return fb}}
+
+// Debounced push of the full overlay to the server (desktop-app mode).
+var _syncTimer=null
+function scheduleSync(){ if(!SERVED) return; clearTimeout(_syncTimer); _syncTimer=setTimeout(pushState,400) }
+function pushState(){
+  try{
+    var body=JSON.stringify({tasks:S.taskState, deals:S.deals, okr:S.okr, health:S.health, notes:S.notes, savedAt:new Date().toISOString()})
+    fetch('/state',{method:'POST',headers:{'Content-Type':'application/json'},body:body}).catch(function(){})
+  }catch(e){}
+}
 
 // ---- Utilities -----------------------------------------------
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -754,7 +773,27 @@ function doReset(){
 }
 
 // ---- Boot ----------------------------------------------------
-render()
+// In desktop-app mode, hydrate saved edits from disk (the server) before
+// the first render, so the app reflects what the morning engine will read.
+function boot(){
+  if(SERVED){
+    fetch('/state').then(function(r){return r.json()}).then(function(st){
+      if(st && typeof st==='object'){
+        ['tasks','deals','okr','health','notes'].forEach(function(k){
+          if(st[k]!=null){ try{localStorage.setItem(key(k),JSON.stringify(st[k]))}catch(e){} }
+        })
+        S.taskState = st.tasks!=null ? st.tasks : S.taskState
+        S.deals     = st.deals!=null ? st.deals : S.deals
+        S.okr       = st.okr   || S.okr
+        S.health    = st.health|| S.health
+        S.notes     = st.notes || S.notes
+      }
+    }).catch(function(){}).finally(function(){ render() })
+  } else {
+    render()
+  }
+}
+boot()
 })();
 </script>
 </body>
