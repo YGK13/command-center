@@ -13,6 +13,7 @@ import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'
 import { ROOT } from './env.mjs'
+import { buildData } from './build-data.mjs'
 
 const PORT = Number(process.env.CC_PORT) || 4173
 const STATE = path.join(ROOT, 'data.local.json')
@@ -43,6 +44,14 @@ const server = http.createServer((req, res) => {
     let data = '{}'
     try { if (fs.existsSync(STATE)) data = fs.readFileSync(STATE, 'utf8') } catch {}
     return send(res, 200, 'application/json', data)
+  }
+
+  // Refresh live data: re-fetch news feeds + KB activity, rewrite data.js.
+  if (req.method === 'POST' && url === '/refresh') {
+    buildData({ fetchFeeds: true })
+      .then(({ snapshot }) => send(res, 200, 'application/json', JSON.stringify({ ok: true, generatedAt: snapshot.generatedAt })))
+      .catch((err) => send(res, 500, 'application/json', JSON.stringify({ ok: false, error: err.message })))
+    return
   }
 
   // Save your edits (the dashboard POSTs here on every change)

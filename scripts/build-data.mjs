@@ -22,6 +22,7 @@ import {
 } from './data.mjs'
 import { fetchAllFeeds } from './feeds.mjs'
 import { readLatestDigest } from './digest.mjs'
+import { readKBActivity } from './kb.mjs'
 
 /**
  * Assemble the full snapshot object and write ../data.js.
@@ -45,6 +46,28 @@ export async function buildData({ fetchFeeds = true } = {}) {
   // Latest KB digest (may be null)
   const digest = readLatestDigest()
 
+  // Your real business activity from the KB ingest (Gmail/calls/deals),
+  // surfaced as a live feed so the dashboard reflects current reality.
+  const kb = readKBActivity({ maxDigests: 7, maxItems: 30 })
+  const kbSource = {
+    id: 'business',
+    label: 'Business Activity',
+    color: '#22c55e',
+    description: 'Live from your KB ingest — deals, intros, signals',
+  }
+  if (kb.items.length) {
+    feeds = {
+      business: { ...kbSource, items: kb.items, error: kb.error, fetchedAt: generatedAt },
+      ...feeds,
+    }
+  }
+
+  // Put Business Activity first in the source list so it leads the Feeds tab.
+  const feedSources = [
+    ...(kb.items.length ? [kbSource] : []),
+    ...FEED_SOURCES.map(({ id, label, color, description }) => ({ id, label, color, description })),
+  ]
+
   const snapshot = {
     generatedAt,
     companies: COMPANIES,
@@ -53,7 +76,7 @@ export async function buildData({ fetchFeeds = true } = {}) {
     tasks: TASKS_DEFAULT,
     builds: BUILD_STATUS,
     stages: STAGES,
-    feedSources: FEED_SOURCES.map(({ id, label, color, description }) => ({ id, label, color, description })),
+    feedSources,
     feeds,
     digest,
   }

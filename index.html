@@ -553,11 +553,13 @@ function vFeeds(){
     var f=feeds[s.id]||{items:[],error:'not loaded'}
     var items=(f.items||[]).slice(0,12)
     var body=items.length?items.map(function(it){
-      return '<a class="fitem" href="'+esc(it.link)+'" target="_blank" rel="noopener">'
+      var open=it.link?'<a class="fitem" href="'+esc(it.link)+'" target="_blank" rel="noopener">':'<div class="fitem">'
+      var close=it.link?'</a>':'</div>'
+      return open
         +'<div class="fitem-t">'+esc(it.title)+'</div><div class="fitem-m">'
         +(it.source?'<span class="fitem-s">'+esc(it.source)+'</span>':'')
         +(it.pubDate?'<span class="fitem-dt">'+esc(relTime(it.pubDate))+'</span>':'')+'</div>'
-        +(it.description?'<div class="fitem-x">'+esc(it.description)+'</div>':'')+'</a>'
+        +(it.description?'<div class="fitem-x">'+esc(it.description)+'</div>':'')+close
     }).join(''):'<div class="empty" style="margin:14px">'+(f.error?'Could not load ('+esc(f.error)+'). Refreshes next morning.':'No items.')+'</div>'
     return '<div class="fpanel"><div class="fpanel-h" style="--fc:'+s.color+'"><span class="fpanel-l" style="color:'+s.color+'">'+esc(s.label)+'</span><span class="fpanel-d">'+esc(s.description)+'</span></div>'+body+'</div>'
   }).join('') || '<div class="empty">All feeds hidden. Toggle at least one above.</div>'
@@ -641,6 +643,7 @@ function render(){
 
   var nav='<nav class="nav"><span class="nav-logo">⚡</span><span class="nav-title">Command Center</span><div class="nav-tabs">'+tabs+'</div>'
     +'<div class="nav-right">'+stale+'<span class="nav-date">'+longDate()+'</span>'
+    +(SERVED?'<button class="icon-btn" data-act="refresh" title="Refresh live feeds + business activity now">↻</button>':'')
     +'<button class="icon-btn" data-act="export" title="Save edits for the next morning email (downloads a file the engine reads)">↓</button>'
     +'<button class="icon-btn" data-act="import" title="Import JSON backup">↑</button>'
     +'<button class="icon-btn danger" data-act="reset" title="Reset edits to defaults">↺</button></div></nav>'
@@ -676,8 +679,18 @@ document.addEventListener('click',function(e){
     case 'export': doExport(); break
     case 'import': doImport(); break
     case 'reset': doReset(); break
+    case 'refresh': refreshNow(t); break
   }
 })
+
+// Pull live feeds + business activity now (desktop-app mode), then reload.
+function refreshNow(btn){
+  if(!SERVED) return
+  if(btn){ btn.textContent='⟳'; btn.disabled=true }
+  fetch('/refresh',{method:'POST'}).then(function(r){return r.json()}).then(function(){
+    location.reload()
+  }).catch(function(){ if(btn){ btn.textContent='↻'; btn.disabled=false } alert('Could not refresh. Is the app server running?') })
+}
 // Keep clicks inside the modal from bubbling to the overlay (which closes it)
 document.addEventListener('click',function(e){if(e.target.closest('[data-stop]'))e.stopPropagation()},true)
 
@@ -788,10 +801,20 @@ function boot(){
         S.health    = st.health|| S.health
         S.notes     = st.notes || S.notes
       }
-    }).catch(function(){}).finally(function(){ render() })
+    }).catch(function(){}).finally(function(){ render(); autoRefreshOnce() })
   } else {
     render()
   }
+}
+// Once per app launch, pull live feeds + business activity so what you see
+// is current (not last night's snapshot). sessionStorage clears when the
+// app window closes, so the next launch refreshes again.
+function autoRefreshOnce(){
+  if(!SERVED) return
+  try{ if(sessionStorage.getItem('cc_refreshed')) return; sessionStorage.setItem('cc_refreshed','1') }catch(e){}
+  fetch('/refresh',{method:'POST'}).then(function(r){return r.json()}).then(function(d){
+    if(d && d.ok) location.reload()
+  }).catch(function(){})
 }
 boot()
 })();

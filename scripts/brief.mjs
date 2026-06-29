@@ -165,6 +165,16 @@ function htmlBrief(snapshot, a, now, openDashboardPath) {
     ? `<div style="margin-top:10px;font:400 12px/1.5 Arial;color:${C.muted};">⚠ Stale crons: ${a.stale.map((s) => esc(s.label) + ' (' + s.ageDays + 'd)').join(', ')}</div>`
     : ''
 
+  // Business activity from the optional KB ingest (if configured)
+  const kbItems = (snapshot.feeds && snapshot.feeds.business && snapshot.feeds.business.items) || []
+  const kbHtml = kbItems.length
+    ? kbItems.slice(0, 6).map((it) => `
+        <div style="margin:0 0 7px;">
+          <span style="font:700 9px/1.4 Arial;text-transform:uppercase;letter-spacing:.5px;color:${it.kind === 'signal' ? C.green : C.dim};">${esc(it.source)}</span>
+          <span style="font:400 12.5px/1.45 Arial;color:${C.text};"> ${esc(it.title)}</span>
+        </div>`).join('')
+    : ''
+
   return `<!DOCTYPE html>
 <html><body style="margin:0;padding:0;background:${C.bg};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.bg};">
@@ -172,11 +182,12 @@ function htmlBrief(snapshot, a, now, openDashboardPath) {
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${C.bg};border:1px solid ${C.border};border-radius:14px;overflow:hidden;">
   <tr><td style="padding:24px 24px 8px;">
     <div style="font:900 20px/1.1 Arial;color:${C.text};">⚡ Command Center</div>
-    <div style="font:400 13px/1.4 Arial;color:${C.muted};margin-top:4px;">Good morning, Yuri — ${esc(longDate(now))}</div>
+    <div style="font:400 13px/1.4 Arial;color:${C.muted};margin-top:4px;">Good morning — ${esc(longDate(now))}</div>
     ${urgencyHtml}
   </td></tr>
 
   ${row(sectionTitle('Top 3 Actions Today') + actionsHtml)}
+  ${kbHtml ? row(sectionTitle('Business Activity — Latest') + kbHtml) : ''}
   ${row(sectionTitle('Pipeline — Due This Week') + soonHtml)}
   ${row(sectionTitle('Where Each Company Stands') + focusHtml)}
   ${row(sectionTitle('Market Signal') + feedHtml)}
@@ -196,7 +207,7 @@ function htmlBrief(snapshot, a, now, openDashboardPath) {
 
 function textBrief(snapshot, a, now, openDashboardPath) {
   const L = []
-  L.push(`COMMAND CENTER — Good morning, Yuri`)
+  L.push(`COMMAND CENTER — Good morning`)
   L.push(longDate(now))
   if (a.overdue.length || a.dueToday.length)
     L.push(`${a.overdue.length} overdue · ${a.dueToday.length} due today`)
@@ -208,6 +219,12 @@ function textBrief(snapshot, a, now, openDashboardPath) {
     })
   } else L.push('None — clear runway.')
   L.push('')
+  const kbItems = (snapshot.feeds && snapshot.feeds.business && snapshot.feeds.business.items) || []
+  if (kbItems.length) {
+    L.push('BUSINESS ACTIVITY — LATEST')
+    kbItems.slice(0, 6).forEach((it) => L.push(`- [${it.source}] ${it.title}`))
+    L.push('')
+  }
   L.push('PIPELINE — DUE THIS WEEK')
   if (a.soon.length) {
     a.soon.slice(0, 8).forEach((d) => {
