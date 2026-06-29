@@ -23,6 +23,7 @@ import {
 import { fetchAllFeeds } from './feeds.mjs'
 import { readLatestDigest } from './digest.mjs'
 import { readKBActivity } from './kb.mjs'
+import { discoverBuilds } from './builds.mjs'
 
 /**
  * Assemble the full snapshot object and write ../data.js.
@@ -42,6 +43,11 @@ export async function buildData({ fetchFeeds = true } = {}) {
       feeds = {}
     }
   }
+
+  // Auto-discovered build folders (live status from disk). Falls back to
+  // the static list only if discovery finds nothing.
+  const discovered = discoverBuilds({ max: 40 })
+  const builds = discovered.length ? discovered : BUILD_STATUS
 
   // Latest KB digest (may be null)
   const digest = readLatestDigest()
@@ -74,7 +80,7 @@ export async function buildData({ fetchFeeds = true } = {}) {
     deals: PIPELINE_DEALS_DEFAULT,
     okrs: OKRS_DEFAULT,
     tasks: TASKS_DEFAULT,
-    builds: BUILD_STATUS,
+    builds,
     stages: STAGES,
     feedSources,
     feeds,
