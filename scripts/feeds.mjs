@@ -33,7 +33,7 @@ function decodeEntities(s) {
     .replace(/&nbsp;/g, ' ')
 }
 
-function parseRSS(xml, limit = 12) {
+export function parseRSS(xml, limit = 12) {
   const items = []
   const blockRe = /<(?:item|entry)\b[^>]*>([\s\S]*?)<\/(?:item|entry)>/g
   let match
@@ -61,8 +61,10 @@ function parseRSS(xml, limit = 12) {
     const title  = decodeEntities(extractTag(block, 'title'))
     const source = decodeEntities(extractTag(block, 'source'))
 
-    if (title && link) {
-      items.push({ title, link, pubDate, description, source })
+    // Only plain web links: a feed must never inject javascript:/data: URLs
+    // into the dashboard or the email.
+    if (title && link && /^https?:\/\//i.test(link.trim())) {
+      items.push({ title, link: link.trim(), pubDate, description, source })
     }
   }
   return items

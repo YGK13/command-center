@@ -98,6 +98,14 @@ const C = {
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
+// Only plain web links make it into the email (defense in depth: feeds.mjs
+// already drops anything else, but data.local.json / old snapshots may not).
+function safeHref(u) {
+  const v = String(u || '').trim()
+  return /^https?:\/\//i.test(v) ? v : '#'
 }
 
 function htmlBrief(snapshot, a, now, openDashboardPath) {
@@ -148,7 +156,7 @@ function htmlBrief(snapshot, a, now, openDashboardPath) {
     ? a.feedPick.map((f) => `
         <div style="margin:0 0 12px;">
           <div style="font:700 10px/1.4 Arial;letter-spacing:.5px;text-transform:uppercase;color:${f.color};margin-bottom:5px;">${esc(f.label)}</div>
-          ${f.items.map((it) => `<div style="margin:0 0 6px;"><a href="${esc(it.link)}" style="font:600 13px/1.4 Arial;color:${C.text};text-decoration:none;">${esc(it.title)}</a></div>`).join('')}
+          ${f.items.map((it) => `<div style="margin:0 0 6px;"><a href="${esc(safeHref(it.link))}" style="font:600 13px/1.4 Arial;color:${C.text};text-decoration:none;">${esc(it.title)}</a></div>`).join('')}
         </div>`).join('')
     : `<div style="font:400 12px/1.5 Arial;color:${C.dim};">Feeds did not load this morning. They will retry tomorrow.</div>`
 
