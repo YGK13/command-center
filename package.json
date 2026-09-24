@@ -16,7 +16,7 @@
     "nocode-template": "python setup/make-nocode-template.py"
   },
   "dependencies": {
-    "nodemailer": "^6.10.1"
+    "nodemailer": "^10.0.10"
   },
   "devDependencies": {
     "puppeteer-core": "^24.0.0"
