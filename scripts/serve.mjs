@@ -14,9 +14,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { ROOT } from './env.mjs'
 import { buildData } from './build-data.mjs'
+import { makeRequestGuard } from './guard.mjs'
 
 const PORT = Number(process.env.CC_PORT) || 4173
 const STATE = path.join(ROOT, 'data.local.json')
+const checkRequest = makeRequestGuard(PORT)
 
 function send(res, code, type, body) {
   res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' })
@@ -25,6 +27,9 @@ function send(res, code, type, body) {
 
 const server = http.createServer((req, res) => {
   const url = (req.url || '/').split('?')[0]
+
+  const denied = checkRequest(req)
+  if (denied) return send(res, 403, 'text/plain', 'forbidden: ' + denied)
 
   // The dashboard
   if (req.method === 'GET' && (url === '/' || url === '/index.html')) {

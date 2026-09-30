@@ -4,6 +4,17 @@
 // The sample below is a fictional demo. Replace it with your own.
 // ============================================================
 
+// ---- SAMPLE DATES ----------------------------------------------
+// The demo dates are relative to today, so a fresh clone's first brief
+// shows a realistic "due today / this week" picture instead of every item
+// being overdue. Replace with real ISO dates ('2026-07-01') in your data.
+const _MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+function _plus(n) { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return d }
+/** ISO date (local) n days from today. */
+const inDays = (n) => { const d = _plus(n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+/** Display label n days from today ("Today", "Jun 11"). */
+const dueLabel = (n) => { if (n === 0) return 'Today'; const d = _plus(n); return `${_MON[d.getMonth()]} ${d.getDate()}` }
+
 // ---- COMPANIES / PROJECTS / SERVICE LINES --------------------
 export const COMPANIES = [
   {
@@ -94,12 +105,12 @@ export const COMPANIES = [
 
 // ---- PIPELINE DEALS (the kanban cards) -----------------------
 export const PIPELINE_DEALS_DEFAULT = [
-  { id: 'd1', company: 'consulting', name: 'Series B SaaS — ops pilot', value: 84000, stage: 'proposal',  nextAction: 'Send the proposal and pricing', dueDate: '2026-06-15' },
-  { id: 'd2', company: 'consulting', name: 'Manufacturer — process audit', value: 45000, stage: 'qualified', nextAction: 'Book the discovery call', dueDate: '2026-06-20' },
-  { id: 'd3', company: 'consulting', name: 'Agency — retainer', value: 36000, stage: 'warm', nextAction: 'Re-send the one-pager', dueDate: '2026-06-25' },
-  { id: 'd4', company: 'advisory', name: 'PE fund — advisory seat', value: 48000, stage: 'warm', nextAction: 'Intro call confirmed, prep scope', dueDate: '2026-06-18' },
-  { id: 'd5', company: 'advisory', name: 'Startup — board advisor', value: 24000, stage: 'cold', nextAction: 'Referral intro, qualify first', dueDate: '2026-06-30' },
-  { id: 'd6', company: 'consulting', name: 'Existing client — renewal', value: 24000, stage: 'closed', nextAction: 'Send renewal + upsell', dueDate: '2026-06-12' },
+  { id: 'd1', company: 'consulting', name: 'Series B SaaS — ops pilot', value: 84000, stage: 'proposal',  nextAction: 'Send the proposal and pricing', dueDate: inDays(6) },
+  { id: 'd2', company: 'consulting', name: 'Manufacturer — process audit', value: 45000, stage: 'qualified', nextAction: 'Book the discovery call', dueDate: inDays(11) },
+  { id: 'd3', company: 'consulting', name: 'Agency — retainer', value: 36000, stage: 'warm', nextAction: 'Re-send the one-pager', dueDate: inDays(16) },
+  { id: 'd4', company: 'advisory', name: 'PE fund — advisory seat', value: 48000, stage: 'warm', nextAction: 'Intro call confirmed, prep scope', dueDate: inDays(9) },
+  { id: 'd5', company: 'advisory', name: 'Startup — board advisor', value: 24000, stage: 'cold', nextAction: 'Referral intro, qualify first', dueDate: inDays(21) },
+  { id: 'd6', company: 'consulting', name: 'Existing client — renewal', value: 24000, stage: 'closed', nextAction: 'Send renewal + upsell', dueDate: inDays(3) },
 ]
 
 // ---- GOALS / OKRs --------------------------------------------
@@ -144,14 +155,14 @@ export const OKRS_DEFAULT = [
 
 // ---- TASKS ---------------------------------------------------
 export const TASKS_DEFAULT = [
-  { id: 't1', priority: 'critical', company: 'consulting', title: 'Send the Series B proposal — it is the biggest deal in the pipeline', category: 'Sales',    done: false, dueDate: 'Today',  dueISO: '2026-06-09' },
-  { id: 't2', priority: 'critical', company: 'product',    title: 'Ship the trial onboarding email sequence', category: 'Build',    done: false, dueDate: 'Today',  dueISO: '2026-06-09' },
-  { id: 't3', priority: 'high',     company: 'advisory',   title: 'Prep the PE fund advisory scope before the intro call', category: 'Sales',    done: false, dueDate: 'Jun 11', dueISO: '2026-06-11' },
-  { id: 't4', priority: 'high',     company: 'newsletter', title: 'Draft next two newsletter issues', category: 'Content',  done: false, dueDate: 'Jun 12', dueISO: '2026-06-12' },
-  { id: 't5', priority: 'high',     company: 'consulting', title: 'Re-qualify the agency retainer lead', category: 'Sales',    done: false, dueDate: 'Jun 13', dueISO: '2026-06-13' },
-  { id: 't6', priority: 'medium',   company: 'product',    title: 'Add a pricing page FAQ', category: 'Build',    done: false, dueDate: 'Jun 16', dueISO: '2026-06-16' },
-  { id: 't7', priority: 'medium',   company: 'newsletter', title: 'Repurpose last issue into a LinkedIn post', category: 'Content',  done: false, dueDate: 'Jun 16', dueISO: '2026-06-16' },
-  { id: 't8', priority: 'medium',   company: 'advisory',   title: 'Send quarterly update to current retainer client', category: 'Outreach', done: false, dueDate: 'Jun 18', dueISO: '2026-06-18' },
+  { id: 't1', priority: 'critical', company: 'consulting', title: 'Send the Series B proposal — it is the biggest deal in the pipeline', category: 'Sales',    done: false, dueDate: dueLabel(0), dueISO: inDays(0) },
+  { id: 't2', priority: 'critical', company: 'product',    title: 'Ship the trial onboarding email sequence', category: 'Build',    done: false, dueDate: dueLabel(0), dueISO: inDays(0) },
+  { id: 't3', priority: 'high',     company: 'advisory',   title: 'Prep the PE fund advisory scope before the intro call', category: 'Sales',    done: false, dueDate: dueLabel(2), dueISO: inDays(2) },
+  { id: 't4', priority: 'high',     company: 'newsletter', title: 'Draft next two newsletter issues', category: 'Content',  done: false, dueDate: dueLabel(3), dueISO: inDays(3) },
+  { id: 't5', priority: 'high',     company: 'consulting', title: 'Re-qualify the agency retainer lead', category: 'Sales',    done: false, dueDate: dueLabel(4), dueISO: inDays(4) },
+  { id: 't6', priority: 'medium',   company: 'product',    title: 'Add a pricing page FAQ', category: 'Build',    done: false, dueDate: dueLabel(7), dueISO: inDays(7) },
+  { id: 't7', priority: 'medium',   company: 'newsletter', title: 'Repurpose last issue into a LinkedIn post', category: 'Content',  done: false, dueDate: dueLabel(7), dueISO: inDays(7) },
+  { id: 't8', priority: 'medium',   company: 'advisory',   title: 'Send quarterly update to current retainer client', category: 'Outreach', done: false, dueDate: dueLabel(9), dueISO: inDays(9) },
 ]
 
 // ---- BACKGROUND SYSTEMS (optional; leave [] if none) ---------

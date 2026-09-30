@@ -310,6 +310,7 @@ function pushState(){
 
 // ---- Utilities -----------------------------------------------
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function safeUrl(u){u=String(u==null?'':u).trim();return /^https?:\/\//i.test(u)?u:''}
 function nanoid(){return Math.random().toString(36).slice(2,10)}
 function fmt(v){v=Number(v)||0;if(v>=1e6)return '$'+(v/1e6).toFixed(1)+'M';if(v>=1e3)return '$'+(v/1e3).toFixed(0)+'K';return '$'+v}
 function healthClass(s){return s>=70?'green':s>=50?'yellow':'red'}
@@ -554,8 +555,9 @@ function vFeeds(){
     var f=feeds[s.id]||{items:[],error:'not loaded'}
     var items=(f.items||[]).slice(0,12)
     var body=items.length?items.map(function(it){
-      var open=it.link?'<a class="fitem" href="'+esc(it.link)+'" target="_blank" rel="noopener">':'<div class="fitem">'
-      var close=it.link?'</a>':'</div>'
+      var href=safeUrl(it.link)
+      var open=href?'<a class="fitem" href="'+esc(href)+'" target="_blank" rel="noopener">':'<div class="fitem">'
+      var close=href?'</a>':'</div>'
       return open
         +'<div class="fitem-t">'+esc(it.title)+'</div><div class="fitem-m">'
         +(it.source?'<span class="fitem-s">'+esc(it.source)+'</span>':'')
@@ -697,7 +699,7 @@ document.addEventListener('click',function(e){
 function refreshNow(btn){
   if(!SERVED) return
   if(btn){ btn.textContent='⟳'; btn.disabled=true }
-  fetch('/refresh',{method:'POST'}).then(function(r){return r.json()}).then(function(){
+  fetch('/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json()}).then(function(){
     location.reload()
   }).catch(function(){ if(btn){ btn.textContent='↻'; btn.disabled=false } alert('Could not refresh. Is the app server running?') })
 }
@@ -822,7 +824,7 @@ function boot(){
 function autoRefreshOnce(){
   if(!SERVED) return
   try{ if(sessionStorage.getItem('cc_refreshed')) return; sessionStorage.setItem('cc_refreshed','1') }catch(e){}
-  fetch('/refresh',{method:'POST'}).then(function(r){return r.json()}).then(function(d){
+  fetch('/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json()}).then(function(d){
     if(d && d.ok) location.reload()
   }).catch(function(){})
 }
