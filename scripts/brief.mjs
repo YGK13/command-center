@@ -5,6 +5,7 @@
 // "do not send" (your day off).
 // ============================================================
 
+import { pathToFileURL } from 'node:url'
 import { companyShort, fmt } from './data.mjs'
 
 // ---- date helpers --------------------------------------------
@@ -54,11 +55,6 @@ function analyze(snapshot, now) {
     .filter((d) => d.inDays <= 7)
     .sort((a, b) => a.inDays - b.inDays)
 
-  // Company focus lines (companies that need attention: health < 70)
-  const focus = snapshot.companies
-    .filter((c) => c.health < 70 && c.focusAction)
-    .sort((a, b) => a.health - b.health)
-
   // Stale build systems (active but lastRun > 2 days ago)
   const stale = (snapshot.builds || [])
     .filter((b) => b.status === 'active' && /^\d{4}-\d{2}-\d{2}/.test(b.lastRun))
@@ -66,26 +62,91 @@ function analyze(snapshot, now) {
     .filter((b) => b.ageDays > 2)
     .sort((a, b) => b.ageDays - a.ageDays)
 
-  // Top feed headlines: 2 from ai-hr, 2 from ai-wage-gap, 1 from vc-funding
-  const feedPick = []
-  const pick = (id, n) => {
-    const f = snapshot.feeds?.[id]
-    if (f?.items?.length) feedPick.push({ label: f.label, color: f.color, items: f.items.slice(0, n) })
-  }
-  pick('ai-hr', 2)
-  pick('ai-wage-gap', 2)
-  pick('vc-funding', 1)
+  const feedPick = pickHeadlines(snapshot)
+  const lines = businessLines(snapshot, openTasks, today)
 
-  return { companyName, openTasks, topActions, overdue, dueToday, soon, focus, stale, feedPick }
+  return { companyName, openTasks, topActions, overdue, dueToday, soon, stale, feedPick, lines }
+}
+
+// Market Signal: headlines from YOUR configured feeds, in the order they
+// appear in FEED_SOURCES (2 + 2 + 1 from the first three feeds that loaded).
+// The KB "business" feed has its own section, so it is left out here.
+export function pickHeadlines(snapshot, quota = [2, 2, 1]) {
+  const feeds = snapshot.feeds || {}
+  const order = (snapshot.feedSources || []).map((s) => s.id)
+  for (const id of Object.keys(feeds)) if (!order.includes(id)) order.push(id)
+  const out = []
+  for (const id of order) {
+    if (id === 'business' || out.length >= quota.length) continue
+    const f = feeds[id]
+    if (f?.items?.length) out.push({ label: f.label, color: f.color, items: f.items.slice(0, quota[out.length]) })
+  }
+  return out
+}
+
+// ---- Business lines scoreboard -------------------------------
+// One row per company / service line: what is open, what is late, what
+// money is in motion, and the next deal date. Sorted so the line that
+// needs you most today is on top (overdue work, then due today, then
+// lowest health).
+export function businessLines(snapshot, openTasks, today) {
+  const deals = snapshot.deals || []
+  return (snapshot.companies || [])
+    .map((c) => {
+      const tasks = openTasks.filter((t) => t.company === c.id)
+      const overdue = tasks.filter((t) => t.dueISO && t.dueISO < today).length
+      const dueToday = tasks.filter((t) => t.dueISO === today).length
+      const open = deals.filter((d) => d.company === c.id && d.stage !== 'closed')
+      const pipeline = open.reduce((sum, d) => sum + (Number(d.value) || 0), 0)
+      const nextDeal = open
+        .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.dueDate || ''))
+        .map((d) => ({ ...d, inDays: daysBetween(d.dueDate, today) }))
+        .sort((a, b) => a.inDays - b.inDays)[0] || null
+      const target = Number(c.revenueTarget) || 0
+      const progress = target > 0 ? Math.round(((Number(c.revenueCurrent) || 0) / target) * 100) : null
+      const health = Number(c.health) || 0
+      const status = overdue > 0 || health < 50 ? 'red' : dueToday > 0 || health < 70 ? 'yellow' : 'green'
+      return {
+        id: c.id, name: c.name, color: c.color, health, status,
+        open: tasks.length, overdue, dueToday,
+        pipeline, dealCount: open.length, nextDeal,
+        revenueLabel: c.revenueLabel || 'Revenue', progress,
+        focusAction: c.focusAction || '',
+      }
+    })
+    .sort((a, b) => (b.overdue - a.overdue) || (b.dueToday - a.dueToday) || (a.health - b.health))
+}
+
+function dealWhen(inDays) {
+  if (inDays < 0) return `${-inDays}d late`
+  if (inDays === 0) return 'today'
+  return `in ${inDays}d`
 }
 
 // ---- Rest-day detection --------------------------------------
 // On your day(s) off, refresh the data silently but do not send an
-// email. Customize this to your week. Default: skip Saturday.
-function isRestDay(now) {
-  const day = now.getDay() // 0 Sun ... 6 Sat
-  if (day === 6) return true                 // Saturday
-  return false
+// email. Set REST_DAYS in .env to a comma list of weekday numbers
+// (0 Sun ... 6 Sat), e.g. REST_DAYS=5,6 for a Sun-Thu week, or
+// REST_DAYS=none to send every day. Default: skip Saturday.
+export function parseRestDays(value) {
+  if (value == null || String(value).trim() === '') return [6]
+  if (/^\s*none\s*$/i.test(String(value))) return []
+  return String(value)
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map((x) => Number(x))
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+}
+
+export function isRestDay(now, restDays = parseRestDays(process.env.REST_DAYS)) {
+  return restDays.includes(now.getDay())
+}
+
+/** file:// link to the dashboard that works on Windows, macOS and Linux. */
+function dashboardHref(p) {
+  if (!p) return ''
+  if (/^[a-z]:[\\/]/i.test(p)) return 'file:///' + p.replace(/\\/g, '/') // Windows path
+  return pathToFileURL(p).href
 }
 
 // ---- HTML rendering ------------------------------------------
@@ -144,12 +205,28 @@ function htmlBrief(snapshot, a, now, openDashboardPath) {
         </div>`).join('')
     : `<div style="font:400 13px/1.5 Arial;color:${C.muted};">Nothing due in the next 7 days.</div>`
 
-  // Company focus
-  const focusHtml = a.focus.map((c) => `
-      <div style="margin:0 0 8px;">
-        <span style="display:inline-block;font:700 10px/1.6 Arial;color:#fff;background:${c.color};border-radius:4px;padding:1px 7px;margin-right:6px;">${esc(c.name)}</span>
-        <span style="font:400 12px/1.5 Arial;color:${C.muted};">H${c.health} · ${esc(c.focusAction)}</span>
-      </div>`).join('')
+  // Business lines scoreboard (one row per company / service line)
+  const dot = { red: C.red, yellow: C.orange, green: C.green }
+  const linesHtml = a.lines.length
+    ? a.lines.map((l) => {
+        const facts = [`${l.open} open`]
+        if (l.overdue) facts.push(`<span style="color:${C.red};font-weight:700;">${l.overdue} overdue</span>`)
+        if (l.dueToday) facts.push(`<span style="color:${C.orange};font-weight:700;">${l.dueToday} due today</span>`)
+        if (l.dealCount) facts.push(`${esc(fmt(l.pipeline))} pipeline (${l.dealCount})`)
+        if (l.progress != null) facts.push(`${l.progress}% of ${esc(l.revenueLabel)} target`)
+        const next = l.nextDeal
+          ? `<div style="font:400 11px/1.4 Arial;color:${C.dim};margin-top:3px;">Next deal: ${esc(l.nextDeal.name)} · <span style="color:${l.nextDeal.inDays <= 0 ? C.red : l.nextDeal.inDays <= 2 ? C.orange : C.dim};">${dealWhen(l.nextDeal.inDays)}</span></div>`
+          : ''
+        const focus = l.focusAction && l.status !== 'green'
+          ? `<div style="font:400 11px/1.4 Arial;color:${C.muted};margin-top:3px;">Focus: ${esc(l.focusAction)}</div>`
+          : ''
+        return `
+      <div style="margin:0 0 8px;padding:10px 12px;background:${C.card};border:1px solid ${C.border};border-left:3px solid ${l.color || C.accent};border-radius:8px;">
+        <div style="font:700 13px/1.4 Arial;color:${C.text};"><span style="color:${dot[l.status]};">●</span> ${esc(l.name)} <span style="font:400 11px Arial;color:${C.dim};">· H${l.health}</span></div>
+        <div style="font:400 12px/1.5 Arial;color:${C.muted};margin-top:2px;">${facts.join(' · ')}</div>${next}${focus}
+      </div>`
+      }).join('')
+    : `<div style="font:400 13px/1.5 Arial;color:${C.muted};">No companies configured yet. Add them in scripts/data.mjs.</div>`
 
   // Feeds
   const feedHtml = a.feedPick.length
@@ -190,20 +267,20 @@ function htmlBrief(snapshot, a, now, openDashboardPath) {
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${C.bg};border:1px solid ${C.border};border-radius:14px;overflow:hidden;">
   <tr><td style="padding:24px 24px 8px;">
     <div style="font:900 20px/1.1 Arial;color:${C.text};">⚡ Command Center</div>
-    <div style="font:400 13px/1.4 Arial;color:${C.muted};margin-top:4px;">Good morning — ${esc(longDate(now))}</div>
+    <div style="font:400 13px/1.4 Arial;color:${C.muted};margin-top:4px;">Good morning. ${esc(longDate(now))}</div>
     ${urgencyHtml}
   </td></tr>
 
   ${row(sectionTitle('Top 3 Actions Today') + actionsHtml)}
-  ${kbHtml ? row(sectionTitle('Business Activity — Latest') + kbHtml) : ''}
-  ${row(sectionTitle('Pipeline — Due This Week') + soonHtml)}
-  ${row(sectionTitle('Where Each Company Stands') + focusHtml)}
+  ${row(sectionTitle('Business Lines at a Glance') + linesHtml)}
+  ${kbHtml ? row(sectionTitle('Business Activity: Latest') + kbHtml) : ''}
+  ${row(sectionTitle('Pipeline: Due This Week') + soonHtml)}
   ${row(sectionTitle('Market Signal') + feedHtml)}
   ${row(sectionTitle('KB Digest') + digestHtml + staleHtml)}
 
   <tr><td style="padding:20px 24px 26px;">
-    <a href="file:///${esc(openDashboardPath.replace(/\\/g, '/'))}" style="display:inline-block;font:700 13px/1 Arial;color:#001018;background:${C.accent};border-radius:8px;padding:11px 18px;text-decoration:none;">Open full dashboard →</a>
-    <div style="font:400 10px/1.5 Arial;color:${C.dim};margin-top:14px;">Generated ${esc(new Date(snapshot.generatedAt).toLocaleString('en-US'))} · This brief runs automatically each morning. Reply STOP to pause.</div>
+    <a href="${esc(dashboardHref(openDashboardPath))}" style="display:inline-block;font:700 13px/1 Arial;color:#001018;background:${C.accent};border-radius:8px;padding:11px 18px;text-decoration:none;">Open full dashboard →</a>
+    <div style="font:400 10px/1.5 Arial;color:${C.dim};margin-top:14px;">Generated ${esc(new Date(snapshot.generatedAt).toLocaleString('en-US'))} · This brief runs automatically each morning. Set REST_DAYS in .env to skip days.</div>
   </td></tr>
 </table>
 </td></tr>
@@ -215,7 +292,7 @@ function htmlBrief(snapshot, a, now, openDashboardPath) {
 
 function textBrief(snapshot, a, now, openDashboardPath) {
   const L = []
-  L.push(`COMMAND CENTER — Good morning`)
+  L.push(`COMMAND CENTER · Good morning`)
   L.push(longDate(now))
   if (a.overdue.length || a.dueToday.length)
     L.push(`${a.overdue.length} overdue · ${a.dueToday.length} due today`)
@@ -225,24 +302,35 @@ function textBrief(snapshot, a, now, openDashboardPath) {
     a.topActions.forEach((t, i) => {
       L.push(`${i + 1}. [${t.priority.toUpperCase()} · ${a.companyName(t.company)}] ${t.title}${t.dueDate ? ' (due ' + t.dueDate + ')' : ''}`)
     })
-  } else L.push('None — clear runway.')
+  } else L.push('None. Clear runway.')
+  L.push('')
+  L.push('BUSINESS LINES AT A GLANCE')
+  if (a.lines.length) {
+    a.lines.forEach((l) => {
+      const facts = [`${l.open} open`]
+      if (l.overdue) facts.push(`${l.overdue} overdue`)
+      if (l.dueToday) facts.push(`${l.dueToday} due today`)
+      if (l.dealCount) facts.push(`${fmt(l.pipeline)} pipeline (${l.dealCount})`)
+      if (l.progress != null) facts.push(`${l.progress}% of ${l.revenueLabel} target`)
+      L.push(`- [${l.status.toUpperCase()}] ${l.name} (H${l.health}): ${facts.join(' · ')}`)
+      if (l.nextDeal) L.push(`    next deal: ${l.nextDeal.name} (${dealWhen(l.nextDeal.inDays)})`)
+      if (l.focusAction && l.status !== 'green') L.push(`    focus: ${l.focusAction}`)
+    })
+  } else L.push('No companies configured yet.')
   L.push('')
   const kbItems = (snapshot.feeds && snapshot.feeds.business && snapshot.feeds.business.items) || []
   if (kbItems.length) {
-    L.push('BUSINESS ACTIVITY — LATEST')
+    L.push('BUSINESS ACTIVITY: LATEST')
     kbItems.slice(0, 6).forEach((it) => L.push(`- [${it.source}] ${it.title}`))
     L.push('')
   }
-  L.push('PIPELINE — DUE THIS WEEK')
+  L.push('PIPELINE: DUE THIS WEEK')
   if (a.soon.length) {
     a.soon.slice(0, 8).forEach((d) => {
       L.push(`- ${d.name} [${a.companyName(d.company)}${d.value > 0 ? ' · ' + fmt(d.value) : ''} · ${d.inDays <= 0 ? 'due now' : 'in ' + d.inDays + 'd'}]`)
       L.push(`    -> ${d.nextAction}`)
     })
   } else L.push('Nothing due in the next 7 days.')
-  L.push('')
-  L.push('WHERE EACH COMPANY STANDS')
-  a.focus.forEach((c) => L.push(`- ${c.name} (H${c.health}): ${c.focusAction}`))
   L.push('')
   L.push('MARKET SIGNAL')
   if (a.feedPick.length) {
@@ -257,7 +345,7 @@ function textBrief(snapshot, a, now, openDashboardPath) {
   }
   if (a.stale.length) L.push('STALE CRONS: ' + a.stale.map((s) => `${s.label} (${s.ageDays}d)`).join(', '))
   L.push('')
-  L.push('Open dashboard: file:///' + openDashboardPath.replace(/\\/g, '/'))
+  if (openDashboardPath) L.push('Open dashboard: ' + dashboardHref(openDashboardPath))
   L.push('This brief runs automatically each morning.')
   return L.join('\n')
 }
@@ -266,17 +354,17 @@ function textBrief(snapshot, a, now, openDashboardPath) {
 
 /**
  * @param {object} snapshot  output of buildData()
- * @param {object} opts      { now?: Date, dashboardPath?: string }
+ * @param {object} opts      { now?: Date, dashboardPath?: string, restDays?: number[] }
  * @returns {{subject, html, text, skip, reason}}
  */
-export function composeBrief(snapshot, { now = new Date(), dashboardPath = '' } = {}) {
-  if (isRestDay(now)) {
+export function composeBrief(snapshot, { now = new Date(), dashboardPath = '', restDays } = {}) {
+  if (isRestDay(now, restDays)) {
     return { skip: true, reason: 'rest day - brief suppressed', subject: '', html: '', text: '' }
   }
 
   const a = analyze(snapshot, now)
   const crit = a.topActions.filter((t) => t.priority === 'critical').length
-  const subject = `⚡ Morning Brief — ${MONTH[now.getMonth()]} ${now.getDate()} · ${a.topActions.length} actions${crit ? `, ${crit} critical` : ''}${a.overdue.length ? `, ${a.overdue.length} overdue` : ''}`
+  const subject = `⚡ Morning Brief · ${MONTH[now.getMonth()]} ${now.getDate()} · ${a.topActions.length} actions${crit ? `, ${crit} critical` : ''}${a.overdue.length ? `, ${a.overdue.length} overdue` : ''}`
 
   return {
     skip: false,

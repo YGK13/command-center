@@ -12,7 +12,7 @@ Free and open source. Take it, make it yours, share it.
 
 - **A dashboard you double-click open.** Works offline, opens instantly. Your companies or projects, pipeline, goals, tasks and live news feeds on one screen. Edit it directly; it remembers your edits.
 - **An engine that runs while you sleep.** On a schedule, it pulls fresh news from the sources you chose, rebuilds the dashboard's data and emails you a brief.
-- **A morning brief in your inbox.** Top 3 actions today, what is due this week, where each part of the business stands, the headlines that matter and any risk flags.
+- **A morning brief in your inbox.** Top 3 actions today, a one-line scoreboard for each business line (open and overdue work, pipeline in motion, next deal date, progress to target), what is due this week, the headlines that matter and any risk flags.
 
 To make it yours, you change **one file**: `scripts/data.mjs`.
 
@@ -105,6 +105,8 @@ crontab -e
 # then add (runs Sun–Fri at 7am):
 0 7 * * 0-5 cd /path/to/command-center && node scripts/daily-brief.mjs
 ```
+
+The schedule decides when the engine runs. `REST_DAYS` in `.env` decides which of those days skip the email (data still refreshes): `REST_DAYS=6` skips Saturday (the default), `REST_DAYS=5,6` gives a Sunday-Thursday week.
 
 ---
 
