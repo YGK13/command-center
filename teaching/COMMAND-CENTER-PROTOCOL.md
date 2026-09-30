@@ -589,7 +589,7 @@ The principle to teach: **the brief decides what to read first, so you never hav
 
 #### Optional: a rest day
 
-If your week has a day you never work, have `composeBrief` return `{ skip: true }` on that day so the engine refreshes data but does not email. (The default skips Saturday. Set it to whatever fits your week.)
+If your week has a day you never work, have `composeBrief` return `{ skip: true }` on that day so the engine refreshes data but does not email. (The default skips Saturday. Set `REST_DAYS` in `.env` to whatever fits your week, e.g. `REST_DAYS=5,6` for a Sunday-Thursday week.)
 
 > **Checkpoint M6.** After Module 7 exists, `npm run brief:dry` prints a readable brief with your real top 3. *Aligned:* the top 3 are genuinely the right 3.
 
